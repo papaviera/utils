@@ -7,4 +7,4 @@ CS:GO shooting improvement script for Neverlose.
 - YouGame: https://yougame.biz/members/654892/
 
 ## Warning
-Use at your own risk. Author is not responsible for any bans.
+Use at your own risk. ¯_(ツ)_/¯
