@@ -1,0 +1,12 @@
+# Neverlose Lua Script
+
+CS:GO shooting improvement script for Neverlose.
+
+## Install
+
+## Contacts
+- Discord: emerald09338
+- YouGame: https://yougame.biz/members/654892/
+
+## Warning
+Use at your own risk. Author is not responsible for any bans.
