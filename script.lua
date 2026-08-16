@@ -133,8 +133,6 @@ local memory = new_class()
 
             local delta = furthest_addr - closest_addr;
 
-            local results = { };
-
             local p = ffi.cast("uint8_t*", base)
 
             for i = 0, delta - #pattern do
@@ -143,9 +141,8 @@ local memory = new_class()
                 for u = 1, #pattern do
                     if pattern[u] ~= nil and p[i + u - 1] ~= pattern[u] then
                         ok = false;
+                        break;
                     end
-
-                    break
                 end
 
                 if ok then
@@ -163,7 +160,7 @@ local memory = new_class()
             for i = 0, s - len do
                 local ok = true
                 for j = 1, len do
-                    if pat[j] ~= W and p[i + j - 1] ~= pat[j] then ok = false; break end
+                    if pat[j] ~= nil and p[i + j - 1] ~= pat[j] then ok = false; break end
                 end
                 if ok then results[#results + 1] = p + i end
             end
@@ -234,12 +231,21 @@ local memory = new_class()
             lerp_records = function(self, base)
                 local pattern = {0xF3, 0x0F, 0x5E, 0xCA, 0x0F, 0x2E, 0xC8, 0x0F, 0x87, nil, nil, nil, nil, 0x66, 0xC7, 0x44, 0x32, nil, nil, nil};
                 local addresses = self.main:scan_nl_all(base, pattern);
-                return addresses;
+
+                local result = {}
+                for i, addr in ipairs(addresses) do
+                    if addr then
+                        result[i] = addr + 7;
+                    end
+                end
+                
+                return result;
             end,
             
             extrapolation_limit = function(self, base)
                 local pattern = {0xF7, 0xD9, 0x0F, 0x48, 0xC8, 0x83, 0xF9, nil, 0xB9, 0x00, 0x00, 0x00, 0x00, 0x77};
                 local addr = self.main:scan_nl(base, pattern);
+                if not addr then return nil end
                 local ptr = addr + 7;
                 return ptr;
             end,
@@ -254,6 +260,7 @@ local memory = new_class()
                 }
 
                 local addr = self.main:scan_nl(base, pattern);
+                if not addr then return nil end
                 local ptr = addr + 4;
                 return ptr;
             end,
@@ -267,6 +274,7 @@ local memory = new_class()
                 }
 
                 local addr = self.main:scan_nl(base, pattern);
+                if not addr then return nil end
                 local ptr = addr + 3;
                 return ptr;
             end,
@@ -279,6 +287,7 @@ local memory = new_class()
                 }
 
                 local addr = self.main:scan_nl(base, pattern);
+                if not addr then return nil end
                 local ptr = addr + 6;
                 return ptr;
             end,
@@ -291,6 +300,7 @@ local memory = new_class()
                 }
 
                 local addr = self.main:scan_nl(base, pattern);
+                if not addr then return nil end
                 local ptr = addr + 6;
                 return ptr;
             end,
@@ -379,12 +389,13 @@ local memory = new_class()
             return patch
         end,
 
-        apply_patch = function(self, name, bytes)
+        apply_patch = function(self, name, bytes, offset)
+            offset = offset or 0;
             local patch = self.patches[name]
             if not patch or #patch.addresses == 0 then return false end
 
             for i, addr in ipairs(patch.addresses) do
-                self.main:byte_patch(addr, bytes)
+                self.main:byte_patch(addr + offset, bytes)
             end
 
             patch.patched = true
@@ -460,7 +471,10 @@ local logic = new_class()
             --self.elements.custom_record_selection = group:switch("Custom Record Selection");
             --self.elements.custom_fallback_selection = group:switch("Custom Fallback Selection");
             
-            self.elements.skip_valid_records = group:switch("Preserve Valid Records");
+            self.elements.skip_valid_records = group:switch("Preserve Valid Records"):set_callback(function(e)
+                local value = e:get()
+                self.skip_valid_records:register_patch(value);
+            end);
 
             self.elements.HAHAHAHHAHAH = group:switch("Disable Soufiw's stupidness"):disabled(true);
         end,
